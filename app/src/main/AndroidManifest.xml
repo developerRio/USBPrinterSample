@@ -2,7 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.originalstocks.usbprintersample">
 
+    <supports-screens android:anyDensity="true" />
+    <uses-feature android:name="android.hardware.usb.accessory" />
     <uses-feature android:name="android.hardware.usb.host" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -11,6 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.USBPrinterSample">
+        <uses-library android:name="com.android.future.usb.accessory" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

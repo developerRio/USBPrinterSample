@@ -7,18 +7,16 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.*
 import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.originalstocks.usbprintersample.databinding.ActivityMainBinding
-import java.nio.ByteBuffer
 
 
 class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
     private lateinit var binding: ActivityMainBinding
+
     private val ACTION_USB_PERMISSION = "com.originalstocks.usbprintersample.USB_PERMISSION"
     var mPermissionIntent: PendingIntent? = null
     var mUsbManager: UsbManager? = null
@@ -31,6 +29,8 @@ class MainActivity : AppCompatActivity() {
     var mDeviceList: HashMap<String, UsbDevice>? = null
     var mDeviceIterator: Iterator<UsbDevice>? = null
     var protocol = 0
+    var testBytes: ByteArray? = null
+
     var textToPrint = "#254896-11     10/12/2020 12:56:13\n" +
             "\n" +
             "QTE PRODUIT     UNIT   TOTAL\n" +
@@ -46,22 +46,19 @@ class MainActivity : AppCompatActivity() {
             "TVA                     8.60\n" +
             "Total HT               19.70"
 
-    private val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+    val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
             if (ACTION_USB_PERMISSION == action) {
                 synchronized(this) {
-                    val device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE) as UsbDevice?
+                    val device =
+                        intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        Log.i(TAG, "onReceive_permissions granted")
-
                         if (device != null) {
-                            // call method to set up device communication
+                            //call method to set up device communication
                             mInterface = device.getInterface(0)
-                            mEndPoint = mInterface?.getEndpoint(0)
-                            mConnection = mUsbManager?.openDevice(device)
-
-                            startPrinting(device, textToPrint, mConnection)
+                            mEndPoint = mInterface!!.getEndpoint(1) // 0 IN and  1 OUT to printer.
+                            mConnection = mUsbManager!!.openDevice(device)
                         }
                     } else {
                         Log.e(TAG, "onReceive_permissions denied")
@@ -75,7 +72,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,6 +123,10 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "onCreate_device_info = $usbDevice")
             }
 
+            mPermissionIntent = PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_PERMISSION), 0)
+            val filter = IntentFilter(ACTION_USB_PERMISSION)
+            registerReceiver(mUsbReceiver, filter)
+            mUsbManager?.requestPermission(mDevice, mPermissionIntent)
         } else {
             Log.e("Exception", "Printer not found")
             Toast.makeText(this, "Please attach printer via USB", Toast.LENGTH_SHORT).show()
@@ -135,23 +135,39 @@ class MainActivity : AppCompatActivity() {
 
         // do this on click of button
         binding.buttonPrint.setOnClickListener {
-            mPermissionIntent = PendingIntent.getBroadcast(
-                this@MainActivity, 0, Intent(
-                    ACTION_USB_PERMISSION
-                ), 0
-            )
-            val filter = IntentFilter(ACTION_USB_PERMISSION)
-            registerReceiver(mUsbReceiver, filter)
             if (mDevice != null) {
-                mUsbManager?.requestPermission(mDevice, mPermissionIntent)
+                startPrinting(mConnection, mInterface)
             } else {
                 Log.e(TAG, "onCreate_mDevice is null")
                 Toast.makeText(this, "Please attach printer via USB", Toast.LENGTH_SHORT).show()
             }
-            // Make the call for print
         }
 
+    }
 
+    private fun startPrinting(connection: UsbDeviceConnection?, usbInterface: UsbInterface?) {
+
+        testBytes = textToPrint.toByteArray()
+        when {
+            usbInterface == null -> {
+                Toast.makeText(this, "INTERFACE IS NULL", Toast.LENGTH_SHORT).show()
+            }
+            connection == null -> {
+                Toast.makeText(this, "CONNECTION IS NULL", Toast.LENGTH_SHORT).show()
+            }
+            forceClaim == null -> {
+                Toast.makeText(this, "FORCE CLAIM IS NULL", Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                connection.claimInterface(usbInterface, forceClaim)
+                val thread = Thread {
+                    val cutPaper = byteArrayOf(0x1D, 0x56, 0x41, 0x10)
+                    connection.bulkTransfer(mEndPoint, testBytes, testBytes!!.size, 0)
+                    connection.bulkTransfer(mEndPoint, cutPaper, cutPaper.size, 0)
+                }
+                thread.run()
+            }
+        }
     }
 
     override fun onStart() {
@@ -177,7 +193,6 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(detachReceiver)
     }
 
-
     private fun translatedDeviceClass(deviceClass: Int): String {
         return when (deviceClass) {
             UsbConstants.USB_CLASS_APP_SPEC -> "Application specific USB class"
@@ -201,67 +216,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun startPrinting(
-        printerDevice: UsbDevice,
-        textToPrint: String,
-        mConnection: UsbDeviceConnection?
-    ) {
-        val handler = Handler()
-        handler.post(object : Runnable {
-            var usbDeviceConnection: UsbDeviceConnection? = null
-            var usbInterface: UsbInterface? = null
-            override fun run() {
-                try {
-                    Log.i("Info", "Bulk transfer started")
-                    // usbInterface = printerDevice.getInterface(0);
-                    for (i in 0 until printerDevice.interfaceCount) {
-                        usbInterface = printerDevice.getInterface(i)
-                        if (usbInterface!!.interfaceClass == UsbConstants.USB_CLASS_PRINTER) {
-                            // usbInterface = mDevice;
-                        }
-                    }
-                    val endPoint = usbInterface!!.getEndpoint(0)
-                    usbDeviceConnection = mUsbManager!!.openDevice(mDevice)
-                    usbDeviceConnection?.claimInterface(usbInterface, true)
-                    var myStringData = textToPrint
-                    myStringData += "\n"
-                    val array = myStringData.toByteArray()
-                    val outputBuffer: ByteBuffer = ByteBuffer.allocate(array.size)
-                    val request = UsbRequest()
-                    request.initialize(usbDeviceConnection, endPoint)
-                    request.queue(outputBuffer, array.size)
-                    if (usbDeviceConnection?.requestWait() === request) {
-                        Log.i("Info", outputBuffer.getChar(0).toString() + "")
-                        val m = Message()
-                        m.obj = outputBuffer.array()
-                        outputBuffer.clear()
-                    } else {
-                        Log.i("Info", "No request received")
-                    }
-                    val transferredData = usbDeviceConnection?.bulkTransfer(
-                        endPoint,
-                        myStringData.toByteArray(),
-                        myStringData.toByteArray().size,
-                        5000
-                    )
-                    Log.i("Info", "Amount of data transferred : $transferredData")
-                } catch (e: Exception) {
-                    Log.e("Exception", "Unable to transfer bulk data")
-                    e.printStackTrace()
-                } finally {
-                    try {
-                        usbDeviceConnection!!.releaseInterface(usbInterface)
-                        Log.i("Info", "Interface released")
-                        usbDeviceConnection!!.close()
-                        Log.i("Info", "Usb connection closed")
-                        unregisterReceiver(mUsbReceiver)
-                        Log.i("Info", "Broadcast receiver unregistered")
-                    } catch (e: Exception) {
-                        Log.e("Exception", "Unable to release resources because : " + e.message)
-                        e.printStackTrace()
-                    }
-                }
-            }
-        })
-    }
 }
