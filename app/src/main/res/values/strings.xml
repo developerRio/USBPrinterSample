@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">USBPrinterSample</string>
+    <string name="dummy_string"><font size = "40"> hi </font></string>
 </resources>

@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.*
 import android.os.Bundle
+import android.text.Html
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -29,7 +30,42 @@ class MainActivity : AppCompatActivity() {
     var mDeviceList: HashMap<String, UsbDevice>? = null
     var mDeviceIterator: Iterator<UsbDevice>? = null
     var protocol = 0
-    var testBytes: ByteArray? = null
+    var textToPrintByteArray: ByteArray? = null
+
+    val FONT_SIZE_NORMAL: Byte = 0x00
+    val FONT_SIZE_LARGE: Byte = 0x10
+
+    val orderTypeToPrint: String = "<b><big><big>SUR PLACE</big></big></b>" // using twice big tag, increases size
+    val orderSerialNumberToPrint: String = "<b><big><big>ESP123</big></big></b>"
+    val brandTittleToPrint: String = "<big>RESTAURANT NAME</big>"
+    val brandAddressToPrint: String = "<big>5 rue sala,</big>"
+    val brandZipCodeAndCityToPrint: String = "<big>69002 LYON</big>"
+    val brandPhoneToPrint: String = "<big>Tel.04.74.98.22.22</big>"
+    val brandSIRETPrint: String = "<big>SIRET 43201425400035</big>"
+    val brandAPECodePrint: String = "<big>5610C</big>"
+    val brandAPEPrint: String = "<big>APE</big>"
+    val brandTVACodePrint: String = "<big>RCS LYON TVA INTRA FR27432078939</big>"
+    val brandOrderNumberPrint: String = "<big>#254896-11</big>"
+    val brandOrderDatePrint: String = "<big>10/12/2020 12:56:13</big>"
+
+
+    val textBoldHeader = ""
+    val textNormalContent =
+        "RESTAURANT NAME\n5 rue sala,\nTel.04.74.98.22.22\nSTREET 43201425400035 - APE 5610C\n RCS LYON TVA INTRA FR27432078939"
+    val textTableContent = "#254896-11     10/12/2020 12:56:13\n" +
+            "\n" +
+            "QTE PRODUIT     UNIT   TOTAL\n" +
+            "1X Burger BIO   7.50   8.50\n" +
+            "    Bacon\n" +
+            "    Chili Sauce\n" +
+            "    Sup Oeuf    1.00\n" +
+            "2X Green Burger 8.00   16.00\n" +
+            "    Barbecue\n" +
+            "    Sup Oeuf\n" +
+            "\n" +
+            "Total TTC              28.30\n" +
+            "TVA                     8.60\n" +
+            "Total HT               19.70"
 
     var textToPrint = "#254896-11     10/12/2020 12:56:13\n" +
             "\n" +
@@ -80,6 +116,8 @@ class MainActivity : AppCompatActivity() {
 
         Log.i("Info", "Activity started")
 
+        binding.dummyTextView.text = Html.fromHtml(orderTypeToPrint)
+
         mUsbManager = getSystemService(Context.USB_SERVICE) as UsbManager
         mDeviceList = mUsbManager?.deviceList
         mDeviceIterator = mDeviceList?.values?.iterator()
@@ -123,7 +161,8 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "onCreate_device_info = $usbDevice")
             }
 
-            mPermissionIntent = PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_PERMISSION), 0)
+            mPermissionIntent =
+                PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_PERMISSION), 0)
             val filter = IntentFilter(ACTION_USB_PERMISSION)
             registerReceiver(mUsbReceiver, filter)
             mUsbManager?.requestPermission(mDevice, mPermissionIntent)
@@ -147,7 +186,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPrinting(connection: UsbDeviceConnection?, usbInterface: UsbInterface?) {
 
-        testBytes = textToPrint.toByteArray()
+        textToPrintByteArray = textToPrint.toByteArray()
         when {
             usbInterface == null -> {
                 Toast.makeText(this, "INTERFACE IS NULL", Toast.LENGTH_SHORT).show()
@@ -162,7 +201,12 @@ class MainActivity : AppCompatActivity() {
                 connection.claimInterface(usbInterface, forceClaim)
                 val thread = Thread {
                     val cutPaper = byteArrayOf(0x1D, 0x56, 0x41, 0x10)
-                    connection.bulkTransfer(mEndPoint, testBytes, testBytes!!.size, 0)
+                    connection.bulkTransfer(
+                        mEndPoint,
+                        textToPrintByteArray,
+                        textToPrintByteArray!!.size,
+                        0
+                    )
                     connection.bulkTransfer(mEndPoint, cutPaper, cutPaper.size, 0)
                 }
                 thread.run()
