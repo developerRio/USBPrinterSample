@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     val FONT_SIZE_NORMAL: Byte = 0x00
     val FONT_SIZE_LARGE: Byte = 0x10
 
+    /*upper header of slip*/
     val orderTypeToPrint: String = "<b><big><big>SUR PLACE</big></big></b>" // using twice big tag, increases size
     val orderSerialNumberToPrint: String = "<b><big><big>ESP123</big></big></b>"
     val brandTittleToPrint: String = "<big>RESTAURANT NAME</big>"
@@ -47,11 +48,28 @@ class MainActivity : AppCompatActivity() {
     val brandTVACodePrint: String = "<big>RCS LYON TVA INTRA FR27432078939</big>"
     val brandOrderNumberPrint: String = "<big>#254896-11</big>"
     val brandOrderDatePrint: String = "<big>10/12/2020 12:56:13</big>"
+    /*need to add lists of products*/
+
+    /*footer of slip*/
+    val brandTotalPriceWithTaxPrint = "<big>Total TTC - 28.30</big>"
+    val brandVATPrint = "<big>TVA - 8.60</big>"
+    val brandTotalPricePrint = "<big>Total HT - 19.70</big>"
+
+    val textBoldHeader = "$orderTypeToPrint\n $orderSerialNumberToPrint" +
+            "$brandTittleToPrint\n" +
+            "$brandAddressToPrint\n" +
+            "$brandZipCodeAndCityToPrint\n" +
+            "$brandPhoneToPrint \n" +
+            "$brandSIRETPrint " + "$brandAPEPrint - " + "$brandAPECodePrint \n" +
+            "$brandTVACodePrint \n" +
+            "_________________________________________" +
+            "$brandOrderNumberPrint " + "$brandOrderDatePrint "
 
 
-    val textBoldHeader = ""
-    val textNormalContent =
-        "RESTAURANT NAME\n5 rue sala,\nTel.04.74.98.22.22\nSTREET 43201425400035 - APE 5610C\n RCS LYON TVA INTRA FR27432078939"
+    val textNormalFooter = "$brandTotalPriceWithTaxPrint \n" +
+            "$brandVATPrint \n " +
+            "$brandTotalPricePrint "
+
     val textTableContent = "#254896-11     10/12/2020 12:56:13\n" +
             "\n" +
             "QTE PRODUIT     UNIT   TOTAL\n" +
@@ -67,20 +85,10 @@ class MainActivity : AppCompatActivity() {
             "TVA                     8.60\n" +
             "Total HT               19.70"
 
-    var textToPrint = "#254896-11     10/12/2020 12:56:13\n" +
-            "\n" +
-            "QTE PRODUIT     UNIT   TOTAL\n" +
-            "1X Burger BIO   7.50   8.50\n" +
-            "    Bacon\n" +
-            "    Chili Sauce\n" +
-            "    Sup Oeuf    1.00\n" +
-            "2X Green Burger 8.00   16.00\n" +
-            "    Barbecue\n" +
-            "    Sup Oeuf\n" +
-            "\n" +
-            "Total TTC              28.30\n" +
-            "TVA                     8.60\n" +
-            "Total HT               19.70"
+    /*final text to print*/
+    var textToPrint = Html.fromHtml(textBoldHeader).toString() + " \n" + "THE CONTENT LIST  \n" + " ${Html.fromHtml(
+        textNormalFooter
+    )}"
 
     val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -116,7 +124,7 @@ class MainActivity : AppCompatActivity() {
 
         Log.i("Info", "Activity started")
 
-        binding.dummyTextView.text = Html.fromHtml(orderTypeToPrint)
+        binding.dummyTextView.text = textToPrint
 
         mUsbManager = getSystemService(Context.USB_SERVICE) as UsbManager
         mDeviceList = mUsbManager?.deviceList
@@ -185,6 +193,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPrinting(connection: UsbDeviceConnection?, usbInterface: UsbInterface?) {
+
+        val cc = byteArrayOf(0x1B, 0x21, 0x00) // 0- normal size text
+
+        val bb = byteArrayOf(0x1B, 0x21, 0x08) // 1- only bold text
+
+        val bb2 = byteArrayOf(0x1B, 0x21, 0x20) // 2- bold with medium text
+
+        val bb3 = byteArrayOf(0x1B, 0x21, 0x10) // 3- bold with large text
+
 
         textToPrintByteArray = textToPrint.toByteArray()
         when {
