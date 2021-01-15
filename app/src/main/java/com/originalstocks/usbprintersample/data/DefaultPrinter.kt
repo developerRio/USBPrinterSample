@@ -4,7 +4,6 @@ import com.originalstocks.usbprintersample.converter.DefaultPrintingImagesHelper
 import com.originalstocks.usbprintersample.converter.PrintingImagesHelper
 import com.originalstocks.usbprintersample.converter.StringToByteArrayConverter
 import com.originalstocks.usbprintersample.converter.DefaultStringToByteArrayConverter
-import com.originalstocks.printstocks.data.printer.Printer
 
 /**
  * Base class for DefaultPrinter

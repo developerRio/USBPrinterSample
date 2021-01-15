@@ -40,7 +40,8 @@ class MainActivity : AppCompatActivity() {
     val FONT_SIZE_LARGE: Byte = 0x10
 
     /*upper header of slip*/
-    val orderTypeToPrint: String = "<b><big><big>SUR PLACE</big></big></b>" // using twice big tag, increases size
+    val orderTypeToPrint: String =
+        "<b><big><big>SUR PLACE</big></big></b>" // using twice big tag, increases size
     val orderSerialNumberToPrint: String = "<b><big><big>ESP123</big></big></b>"
     val brandTittleToPrint: String = "<big>RESTAURANT NAME</big>"
     val brandAddressToPrint: String = "<big>5 rue sala,</big>"
@@ -90,9 +91,12 @@ class MainActivity : AppCompatActivity() {
             "Total HT               19.70"
 
     /*final text to print*/
-    var textToPrint = Html.fromHtml(textBoldHeader).toString() + " \n" + "THE CONTENT LIST  \n" + " ${Html.fromHtml(
-        textNormalFooter
-    )}"
+    var textToPrint =
+        Html.fromHtml(textBoldHeader).toString() + " \n" + "THE CONTENT LIST  \n" + " ${
+            Html.fromHtml(
+                textNormalFooter
+            )
+        }"
 
     val mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -200,7 +204,7 @@ class MainActivity : AppCompatActivity() {
     private fun startPrinting(connection: UsbDeviceConnection?, usbInterface: UsbInterface?) {
 
         val printableArrayList: ArrayList<Printable> = ArrayList()
-        //printableArrayList.add(RawPrintable.Builder(byteArrayOf(27, 100, 4)).build())
+        printableArrayList.add(RawPrintable.Builder(byteArrayOf(27, 100, 4)).build())
 
         val textBoldHeader = "SUR PLACE\nESP123"
         val textNormalContent =
@@ -260,12 +264,12 @@ class MainActivity : AppCompatActivity() {
         printableArrayList.add(printableTable)
 
         /** Need to convert ArrayList into a byte array*/
+        Log.i(TAG, "startPrinting_converted_list_into_byteArray = ${printableArrayList}")
 
-        Log.i(TAG, "startPrinting_converted_list_into_byteArray = ${printableArrayList.toString().toByteArray()}")
-
-
-        textToPrintByteArray = textToPrint.toByteArray()
+        //textToPrintByteArray = textToPrint.toByteArray()
+        textToPrintByteArray = printableArrayList.toString().toByteArray()
         Log.i(TAG, "startPrinting_already_converted_byte_array  = $textToPrintByteArray")
+
 
         when {
             usbInterface == null -> {
@@ -280,14 +284,14 @@ class MainActivity : AppCompatActivity() {
             else -> {
                 connection.claimInterface(usbInterface, forceClaim)
                 val thread = Thread {
-                    val cutPaper = byteArrayOf(0x1D, 0x56, 0x41, 0x10)
+                    //val cutPaper = byteArrayOf(0x1D, 0x56, 0x41, 0x10)
                     connection.bulkTransfer(
                         mEndPoint,
                         textToPrintByteArray,
                         textToPrintByteArray!!.size,
                         0
                     )
-                    connection.bulkTransfer(mEndPoint, cutPaper, cutPaper.size, 0)
+                    //connection.bulkTransfer(mEndPoint, cutPaper, cutPaper.size, 0)
                 }
                 thread.run()
             }

@@ -1,7 +1,6 @@
 package com.originalstocks.usbprintersample.data
 
 import com.originalstocks.usbprintersample.converter.StringToByteArrayConverter
-import com.originalstocks.printstocks.data.printer.Printer
 import com.originalstocks.usbprintersample.converter.Printable
 
 /**

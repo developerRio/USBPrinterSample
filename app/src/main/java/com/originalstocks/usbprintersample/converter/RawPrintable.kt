@@ -1,6 +1,6 @@
 package com.originalstocks.usbprintersample.converter
 
-import com.originalstocks.printstocks.data.printer.Printer
+import com.originalstocks.usbprintersample.data.Printer
 
 
 data class RawPrintable private constructor(val command: ByteArray,

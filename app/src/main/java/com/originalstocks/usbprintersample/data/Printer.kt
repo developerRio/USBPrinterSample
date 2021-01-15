@@ -1,4 +1,4 @@
-package com.originalstocks.printstocks.data.printer
+package com.originalstocks.usbprintersample.data
 
 import com.originalstocks.usbprintersample.converter.PrintingImagesHelper
 import com.originalstocks.usbprintersample.converter.StringToByteArrayConverter
