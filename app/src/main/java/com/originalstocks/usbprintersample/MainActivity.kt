@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     var mDeviceList: HashMap<String, UsbDevice>? = null
     var mDeviceIterator: Iterator<UsbDevice>? = null
     var protocol = 0
-    var textToPrintByteArray: ByteArray? = null
+    var FEED_PAPER_AND_CUT = byteArrayOf(0x1D, 0x56, 66, 0x00)
     private lateinit var printer: Printer
     var extraLinesAtEnd: Byte = 0
 
@@ -174,7 +174,7 @@ class MainActivity : AppCompatActivity() {
             .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
             .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
             .setLineSpacing(DefaultPrinter.LINE_SPACING_60)
-            .setNewLinesAfter(2) // To provide n lines after sentence
+            .setNewLinesAfter(1) // To provide n lines after sentence
             .build()
 
         val printableContent = TextPrintable.Builder()
@@ -184,18 +184,18 @@ class MainActivity : AppCompatActivity() {
             .setFontSize(DefaultPrinter.FONT_SIZE_NORMAL)
             .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
             .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
-            .setLineSpacing(DefaultPrinter.LINE_SPACING_60)
+            .setLineSpacing(DefaultPrinter.LINE_SPACING_30)
             .setNewLinesAfter(1) // To provide n lines after sentence
             .build()
 
         val printableTable = TextPrintable.Builder()
             .setText(textTableContent) //The text you want to print
-            .setAlignment(DefaultPrinter.ALIGNMENT_CENTER)
+            .setAlignment(DefaultPrinter.ALIGNMENT_LEFT)
             .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_NORMAL) //Bold or normal
             .setFontSize(DefaultPrinter.FONT_SIZE_NORMAL)
             .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
             .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
-            .setLineSpacing(DefaultPrinter.LINE_SPACING_60)
+            .setLineSpacing(DefaultPrinter.LINE_SPACING_30)
             .setNewLinesAfter(1) // To provide n lines after sentence
             .build()
 
@@ -237,12 +237,8 @@ class MainActivity : AppCompatActivity() {
                             Log.i(TAG, "startPrinting_byte_array_data_to_send = $data")
                         }
                     }
-
-                    //Feed 2 lines to cut the paper
-                    if (extraLinesAtEnd > 0) {
-                        printer.feedLineCommand.plus(extraLinesAtEnd)
-                    }
-                    //connection.bulkTransfer(mEndPoint, cutPaper, cutPaper.size, 0)
+                    // for feeding & cutting paper up-to TWO lines
+                    connection.bulkTransfer(mEndPoint, FEED_PAPER_AND_CUT, FEED_PAPER_AND_CUT.size, 0)
                 }
                 thread.run()
             }
