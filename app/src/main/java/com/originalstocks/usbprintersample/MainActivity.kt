@@ -151,20 +151,24 @@ class MainActivity : AppCompatActivity() {
         val textNormalContent =
             "RESTAURANT NAME\n5 rue sala,\nTel.04.74.98.22.22\nSTREET 43201425400035 - APE 5610C\n RCS LYON TVA INTRA FR27432078939"
 
-        val textTableContent = "#254896-11     10/12/2020 12:56:13\n" +
-                "\n" +
-                "QTE PRODUIT     UNIT   TOTAL\n" +
-                "1X Burger BIO   7.50   8.50\n" +
-                "    Bacon\n" +
-                "    Chili Sauce\n" +
-                "    Sup Oeuf    1.00\n" +
-                "2X Green Burger 8.00   16.00\n" +
-                "    Barbecue\n" +
-                "    Sup Oeuf\n" +
-                "\n" +
-                "Total TTC              28.30\n" +
-                "TVA                     8.60\n" +
-                "Total HT               19.70"
+        val lineSeparator = "________________________________________" + "\n"
+
+        val orderNumberDateContent = "#254896-11       10/12/2020 12:56:13\n"
+
+        val orderDetailsContent = "\n" + "QTE PRODUIT          UNIT       TOTAL\n" +
+                                         "1X Burger BIO        7.50       8.50\n" +
+                                         "    Bacon\n" +
+                                         "    Chili Sauce\n" +
+                                         "    Sup Oeuf         1.00\n" +
+                                         "\n" +
+                                         "2X Green Burger      8.00       16.00\n" +
+                                         "    Barbecue\n" +
+                                         "    Sup Oeuf\n" +
+                                         "\n"
+
+         val orderPriceDetailsContent =  "Total TTC                       28.30\n" +
+                                         "TVA                              8.60\n" +
+                                         "Total HT                        19.70"
 
         val printableHeader = TextPrintable.Builder()
             .setText(textBoldHeader) //The text you want to print
@@ -188,9 +192,42 @@ class MainActivity : AppCompatActivity() {
             .setNewLinesAfter(1) // To provide n lines after sentence
             .build()
 
+        val lineSeparatorContent = TextPrintable.Builder()
+            .setText(lineSeparator)
+            .setAlignment(DefaultPrinter.ALIGNMENT_CENTER)
+            .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_NORMAL) //Bold or normal
+            .setFontSize(DefaultPrinter.FONT_SIZE_NORMAL)
+            .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
+            .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
+            .setLineSpacing(DefaultPrinter.LINE_SPACING_30)
+            .setNewLinesAfter(1) // To provide n lines after sentence
+            .build()
+
+        val printableHeaderTable = TextPrintable.Builder()
+            .setText(orderNumberDateContent)
+            .setAlignment(DefaultPrinter.ALIGNMENT_CENTER)
+            .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_NORMAL) //Bold or normal
+            .setFontSize(DefaultPrinter.FONT_SIZE_NORMAL)
+            .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
+            .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
+            .setLineSpacing(DefaultPrinter.LINE_SPACING_30)
+            .setNewLinesAfter(1) // To provide n lines after sentence
+            .build()
+
         val printableTable = TextPrintable.Builder()
-            .setText(textTableContent) //The text you want to print
+            .setText(orderDetailsContent)
             .setAlignment(DefaultPrinter.ALIGNMENT_LEFT)
+            .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_NORMAL) //Bold or normal
+            .setFontSize(DefaultPrinter.FONT_SIZE_NORMAL)
+            .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
+            .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
+            .setLineSpacing(DefaultPrinter.LINE_SPACING_30)
+            .setNewLinesAfter(1) // To provide n lines after sentence
+            .build()
+
+        val orderTotalContent = TextPrintable.Builder()
+            .setText(orderPriceDetailsContent)
+            .setAlignment(DefaultPrinter.ALIGNMENT_CENTER)
             .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_NORMAL) //Bold or normal
             .setFontSize(DefaultPrinter.FONT_SIZE_NORMAL)
             .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
@@ -201,7 +238,10 @@ class MainActivity : AppCompatActivity() {
 
         printableArrayList.add(printableHeader)
         printableArrayList.add(printableContent)
+        printableArrayList.add(lineSeparatorContent)
+        printableArrayList.add(printableHeaderTable)
         printableArrayList.add(printableTable)
+        printableArrayList.add(orderTotalContent)
 
         /** Need to convert ArrayList into a byte array*/
         Log.i(TAG, "startPrinting_converted_list_into_byteArray = $printableArrayList")
@@ -225,7 +265,6 @@ class MainActivity : AppCompatActivity() {
             else -> {
                 connection.claimInterface(usbInterface, forceClaim)
                 val thread = Thread {
-                    //val cutPaper = byteArrayOf(0x1D, 0x56, 0x41, 0x10)
                     printableArrayList.forEach {
                         it.getPrintableByteArray(printer).forEach { data ->
                             connection.bulkTransfer(
@@ -238,7 +277,12 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     // for feeding & cutting paper up-to TWO lines
-                    connection.bulkTransfer(mEndPoint, FEED_PAPER_AND_CUT, FEED_PAPER_AND_CUT.size, 0)
+                    connection.bulkTransfer(
+                        mEndPoint,
+                        FEED_PAPER_AND_CUT,
+                        FEED_PAPER_AND_CUT.size,
+                        0
+                    )
                 }
                 thread.run()
             }
