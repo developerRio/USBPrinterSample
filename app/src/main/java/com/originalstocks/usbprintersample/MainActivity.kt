@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.*
 import android.os.Bundle
+import android.text.Html
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.originalstocks.usbprintersample.converter.Printable
@@ -117,8 +119,12 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "onCreate_device_info = $usbDevice")
             }
 
-            mPermissionIntent =
-                PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_PERMISSION), 0)
+            mPermissionIntent = PendingIntent.getBroadcast(
+                this,
+                0,
+                Intent(ACTION_USB_PERMISSION),
+                0
+            )
             val filter = IntentFilter(ACTION_USB_PERMISSION)
             registerReceiver(mUsbReceiver, filter)
             mUsbManager?.requestPermission(mDevice, mPermissionIntent)
@@ -139,6 +145,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // testing
+
+        val orderTypeToPrint = "<b><big><big>SUR PLACE</big></big></b>"
+        val orderSerialNumberToPrint = "<b><big><big>ESP123</big></big></b>"
+        val spanned =   Html.fromHtml(orderTypeToPrint)
+        binding.dummyTextView.text = spanned
+
     }
 
     private fun startPrinting(connection: UsbDeviceConnection?, usbInterface: UsbInterface?) {
@@ -147,11 +160,13 @@ class MainActivity : AppCompatActivity() {
         val printableArrayList: ArrayList<Printable> = ArrayList()
         printableArrayList.add(RawPrintable.Builder(byteArrayOf(27, 100, 4)).build())
 
-        val textBoldHeader = "SUR PLACE\nESP123"
+        val orderTypeToPrint = "<b><big><big>SUR PLACE</big></big></b>"
+        val orderSerialNumberToPrint = "<b><big><big>ESP123</big></big></b>"
+
         val textNormalContent =
             "RESTAURANT NAME\n5 rue sala,\nTel.04.74.98.22.22\nSTREET 43201425400035 - APE 5610C\n RCS LYON TVA INTRA FR27432078939"
 
-        val lineSeparator = "________________________________________" + "\n"
+        val lineSeparator = "____________________________________________" + "\n"
 
         val orderNumberDateContent = "#254896-11       10/12/2020 12:56:13\n"
 
@@ -170,8 +185,19 @@ class MainActivity : AppCompatActivity() {
                                          "TVA                              8.60\n" +
                                          "Total HT                        19.70"
 
-        val printableHeader = TextPrintable.Builder()
-            .setText(textBoldHeader) //The text you want to print
+        val printableOrderTypeHeader = TextPrintable.Builder()
+            .setText("${Html.fromHtml(orderTypeToPrint)}") //The text you want to print
+            .setAlignment(DefaultPrinter.ALIGNMENT_CENTER)
+            .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_BOLD) //Bold or normal
+            .setFontSize(DefaultPrinter.FONT_SIZE_LARGE)
+            .setUnderlined(DefaultPrinter.UNDERLINED_MODE_OFF) // Underline on/off
+            .setCharacterCode(DefaultPrinter.CHARCODE_PC437) // Character code to support languages /** CHARCODE_PC863 for Canadian-French*/
+            .setLineSpacing(DefaultPrinter.LINE_SPACING_60)
+            .setNewLinesAfter(1) // To provide n lines after sentence
+            .build()
+
+        val printableOrderNumberHeader = TextPrintable.Builder()
+            .setText("${Html.fromHtml(orderSerialNumberToPrint)}") //The text you want to print
             .setAlignment(DefaultPrinter.ALIGNMENT_CENTER)
             .setEmphasizedMode(DefaultPrinter.EMPHASIZED_MODE_BOLD) //Bold or normal
             .setFontSize(DefaultPrinter.FONT_SIZE_LARGE)
@@ -236,7 +262,8 @@ class MainActivity : AppCompatActivity() {
             .setNewLinesAfter(1) // To provide n lines after sentence
             .build()
 
-        printableArrayList.add(printableHeader)
+        printableArrayList.add(printableOrderTypeHeader)
+        printableArrayList.add(printableOrderNumberHeader)
         printableArrayList.add(printableContent)
         printableArrayList.add(lineSeparatorContent)
         printableArrayList.add(printableHeaderTable)
